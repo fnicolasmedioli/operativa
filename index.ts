@@ -1,184 +1,134 @@
-import { correlatividades, dataset, Dataset1, IDMateria } from "./dataset1";
+import { Correlatividades, correlatividades, Dataset1, getRandomDataset, guardarDataset, IDMateria, validateDataset } from "./dataset";
 
 
-function calcularProbabilidadAprobacion(dataset: Dataset1): Record<number, number> {
-    const probabilidades: Record<number, number> = {};
-    const conteo: Record<number, { aprobados: number; total: number }> = {};
+type ProbabilityStats = {
+    neverTaken: number;
+    takenOnce: number;
+    takenTwice: number;
+    takenThreeOrMore: number;
+};
 
-    for (const periodo of dataset) {
-        for (const materia of periodo.materias) {
-            if (!conteo[materia.id]) {
-                conteo[materia.id] = { aprobados: 0, total: 0 };
-            }
-            for (const alumno of materia.alumnos) {
-                if (alumno.resultado === "aprobado") {
-                    conteo[materia.id].aprobados++;
-                }
-                conteo[materia.id].total++;
-            }
-        }
-    }
+export function calculatePassingProbability(
+    dataset: Dataset1,
+    materiaId: IDMateria
+): ProbabilityStats {
+    // Estructura para mantener el historial de intentos y resultados por alumno
+    type StudentHistory = {
+        attempts: number;
+        successesByAttempt: { [attempt: number]: number };
+        totalByAttempt: { [attempt: number]: number };
+    };
 
-    for (const id in conteo) {
-        probabilidades[parseInt(id)] = (conteo[id].aprobados / conteo[id].total) * 100;
-    }
+    const studentHistories: { [studentId: number]: StudentHistory } = {};
 
-    return probabilidades;
-}
-
-
-//console.log(calcularProbabilidadAprobacion(dataset));
-
-function validateCorrelatives(dataset: Dataset1): {
-    invalidEnrollments: {
-        año: number;
-        cuatrimestre: number;
-        materiaId: number;
-        alumnoId: number;
-        missingPrerequisites: number[];
-    }[];
-} {
-    const studentApprovals: Map<number, Set<number>> = new Map();
-    const invalidEnrollments: {
-        año: number;
-        cuatrimestre: number;
-        materiaId: number;
-        alumnoId: number;
-        missingPrerequisites: number[];
-    }[] = [];
-
-    // Sort dataset by year and quarter to process chronologically
+    // Procesar el dataset cronológicamente
     const sortedDataset = [...dataset].sort((a, b) => {
         if (a.año !== b.año) return a.año - b.año;
         return a.cuatrimestre - b.cuatrimestre;
     });
 
-    // Process each period
+    // Analizar cada período
     for (const period of sortedDataset) {
-        // Process each subject in the period
-        for (const materia of period.materias) {
-            const requiredCorrelatives = correlatividades[materia.id] || [];
+        const materia = period.materias.find(m => m.id === materiaId);
+        if (!materia) continue;
 
-            // Check each student in the subject
-            for (const alumno of materia.alumnos) {
-                // Get or initialize student's approved subjects
-                if (!studentApprovals.has(alumno.id)) {
-                    studentApprovals.set(alumno.id, new Set());
-                }
-                const studentApprovedSubjects = studentApprovals.get(alumno.id)!;
+        // Analizar cada alumno en la materia
+        for (const alumno of materia.alumnos) {
+            if (!studentHistories[alumno.id]) {
+                studentHistories[alumno.id] = {
+                    attempts: 0,
+                    successesByAttempt: {},
+                    totalByAttempt: {}
+                };
+            }
 
-                // Check if student meets prerequisites
-                const missingPrerequisites = requiredCorrelatives.filter(
-                    prerequisite => !studentApprovedSubjects.has(prerequisite)
-                );
+            const history = studentHistories[alumno.id];
+            const currentAttempt = history.attempts + 1;
+            history.attempts = currentAttempt;
 
-                // If missing prerequisites, add to invalid enrollments
-                if (missingPrerequisites.length > 0) {
-                    invalidEnrollments.push({
-                        año: period.año,
-                        cuatrimestre: period.cuatrimestre,
-                        materiaId: materia.id,
-                        alumnoId: alumno.id,
-                        missingPrerequisites
-                    });
-                }
+            // Inicializar contadores si no existen
+            if (!history.successesByAttempt[currentAttempt]) {
+                history.successesByAttempt[currentAttempt] = 0;
+                history.totalByAttempt[currentAttempt] = 0;
+            }
 
-                // If student passed, add to their approved subjects
-                if (alumno.resultado === "aprobado") {
-                    studentApprovedSubjects.add(materia.id);
-                }
+            // Incrementar contadores
+            history.totalByAttempt[currentAttempt]++;
+            if (alumno.resultado === "aprobado") {
+                history.successesByAttempt[currentAttempt]++;
             }
         }
     }
 
-    return { invalidEnrollments };
-}
+    // Calcular probabilidades por número de intento
+    let stats = {
+        neverTaken: 0,    // Primera vez
+        takenOnce: 0,     // Segunda vez
+        takenTwice: 0,    // Tercera vez
+        takenThreeOrMore: 0  // Cuarta vez o más
+    };
 
-// Run the validation
-// const validationResult = validateCorrelatives(dataset);
+    let totals = {
+        neverTaken: 0,
+        takenOnce: 0,
+        takenTwice: 0,
+        takenThreeOrMore: 0
+    };
 
-// Log results
-// console.log("Invalid enrollments found:", validationResult.invalidEnrollments);
+    // Sumar todos los resultados por número de intento
+    Object.values(studentHistories).forEach(history => {
+        Object.entries(history.successesByAttempt).forEach(([attempt, successes]) => {
+            const attemptNum = parseInt(attempt);
+            const total = history.totalByAttempt[attemptNum];
 
-
-
-
-
-
-// Probabilidades de transición para cada materia (probabilidad de aprobar, reprobar o abandonar)
-type Probabilidades = {
-    aprobado: number;
-    desaprobado: number;
-    abandono: number;
-};
-
-// Definimos el espacio de estados extendido para correlativas
-type EstadoMateria = {
-    materia: IDMateria;
-    estadoCorrelativas: string; // Estado de las correlativas (Aprobado/Reprobado)
-}
-
-
-// Función para calcular las probabilidades de aprobar, reprobar o abandonar una asignatura
-const calcularProbabilidadesMateria = (materiaId: IDMateria, cuatrimestreData: Dataset1): Probabilidades => {
-    let aprobados = 0;
-    let desaprobados = 0;
-    let abandonos = 0;
-
-    // Filtramos los datos para la materia actual
-    const materia = cuatrimestreData.find(m => m.materias.some(mat => mat.id === materiaId))?.materias.find(mat => mat.id === materiaId);
-
-    if (materia) {
-        // Contamos los resultados de los alumnos
-        materia.alumnos.forEach(alumno => {
-            if (alumno.resultado === "aprobado") {
-                aprobados++;
-            } else if (alumno.resultado === "desaprobado") {
-                desaprobados++;
+            if (attemptNum === 1) {
+                stats.neverTaken += successes;
+                totals.neverTaken += total;
+            } else if (attemptNum === 2) {
+                stats.takenOnce += successes;
+                totals.takenOnce += total;
+            } else if (attemptNum === 3) {
+                stats.takenTwice += successes;
+                totals.takenTwice += total;
+            } else {
+                stats.takenThreeOrMore += successes;
+                totals.takenThreeOrMore += total;
             }
-            // Consideramos abandono si el alumno no está en la lista de la materia
-            else {
-                abandonos++;
-            }
-        });
-
-        const total = aprobados + desaprobados + abandonos;
-
-        return {
-            aprobado: total > 0 ? aprobados / total : 0,
-            desaprobado: total > 0 ? desaprobados / total : 0,
-            abandono: total > 0 ? abandonos / total : 0
-        };
-    }
-
-    return { aprobado: 0, desaprobado: 0, abandono: 0 };
-};
-
-
-// Generar las probabilidades de transición para todas las materias
-const generarTransiciones = (dataset: Dataset1, correlatividades: Correlatividades): Record<string, Record<string, Probabilidades>> => {
-    const transiciones: Record<string, Record<string, Probabilidades>> = {};
-
-    dataset.forEach(cuatrimestreData => {
-        cuatrimestreData.materias.forEach(materia => {
-            const materiaId = materia.id;
-            const probabilidad = calcularProbabilidadesMateria(materiaId, [cuatrimestreData]);
-            const estadoCorrelativas = correlatividades[materiaId]?.map(cor => `Materia ${cor}`).join(", ") || "Sin correlativas";
-
-            // Agregar transiciones en función del estado de correlativas
-            if (!transiciones[materiaId]) {
-                transiciones[materiaId] = {};
-            }
-
-            transiciones[materiaId][estadoCorrelativas] = probabilidad;
         });
     });
 
-    return transiciones;
-};
+    // Calcular probabilidades finales
+    return {
+        neverTaken: totals.neverTaken > 0 ? stats.neverTaken / totals.neverTaken : 0,
+        takenOnce: totals.takenOnce > 0 ? stats.takenOnce / totals.takenOnce : 0,
+        takenTwice: totals.takenTwice > 0 ? stats.takenTwice / totals.takenTwice : 0,
+        takenThreeOrMore: totals.takenThreeOrMore > 0 ? stats.takenThreeOrMore / totals.takenThreeOrMore : 0
+    };
+}
 
-// Ejecutar la función de generación de transiciones
-const transiciones = generarTransiciones(dataset, correlatividades);
+// Función auxiliar para usar el calculador
+export function analyzeMateriaPassingProbabilities(
+    dataset: Dataset1,
+    materiaId: IDMateria
+): void {
+    const probabilities = calculatePassingProbability(dataset, materiaId);
 
-// Imprimir las transiciones
-console.log(transiciones);
+    console.log(`Probabilidades de aprobación para la materia ${materiaId}:`);
+    console.log(`- Primera vez: ${(probabilities.neverTaken * 100).toFixed(2)}%`);
+    console.log(`- Segunda vez: ${(probabilities.takenOnce * 100).toFixed(2)}%`);
+    console.log(`- Tercera vez: ${(probabilities.takenTwice * 100).toFixed(2)}%`);
+    console.log(`- Cuarta vez o más: ${(probabilities.takenThreeOrMore * 100).toFixed(2)}%`);
+}
+
+
+
+
+
+const dataset = getRandomDataset();
+const validationResult = validateDataset(dataset);
+console.log("Invalid enrollments found:", (validationResult.invalidEnrollments.length) ? validationResult.invalidEnrollments : "No invalid enrollments found");
+
+guardarDataset(dataset, "dataset.json");
+
+
+analyzeMateriaPassingProbabilities(dataset, 6112);
