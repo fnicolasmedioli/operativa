@@ -1,0 +1,24 @@
+{
+  "name": "operativa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fnicolasmedioli/operativa.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fnicolasmedioli/operativa/issues"
+  },
+  "homepage": "https://github.com/fnicolasmedioli/operativa#readme",
+  "description": "",
+  "dependencies": {
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
