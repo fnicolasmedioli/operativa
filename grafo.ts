@@ -120,40 +120,45 @@ export class Grafo {
                 }
                 // Agregar caminos entre intermedios ( no anda )
 
-                /*
                 for (let i = 0; i < intermedios.length; i++) {
                     for (let j = 0; j < intermedios.length; j++) {
                         if (i === j) continue;
 
-                        // Encontrar las materias que se aprobaron en i pero no en j, y comprobar que no haya materias que se hayan aprobado en j pero no en i
-                        const materiasAprobadasEnI = intermedios[i].split(',').filter(m => m[0] !== '-');
-                        const materiasAprobadasEnJ = intermedios[j].split(',').filter(m => m[0] !== '-');
-                        const materiasNoAprobadasEnJ = intermedios[j].split(',').filter(m => m[0] === '-');
-                        const materiasNoAprobadasEnI = intermedios[i].split(',').filter(m => m[0] === '-');
+                        // comprobar si hay materias aprobadas en j pero no en i
+                        const aprobaronJ = this.getIntermedio(intermedios[j]).split(',').filter(m => m[0] !== '-');
+                        const aprobaronI = this.getIntermedio(intermedios[i]).split(',').filter(m => m[0] !== '-');
 
-                        const materiasAprobadasSoloEnI = materiasAprobadasEnI.filter(m => !materiasAprobadasEnJ.includes(m));
-                        const materiasAprobadasSoloEnJ = materiasAprobadasEnJ.filter(m => !materiasAprobadasEnI.includes(m));
+                        let no_sirve = false;
+                        for (const t of aprobaronJ)
+                            if (!aprobaronI.includes(t)) {
+                                no_sirve = true;
+                                break;
+                            }
 
-                        const materiasNoAprobadasSoloEnI = materiasNoAprobadasEnI.filter(m => !materiasNoAprobadasEnJ.includes(m)).map(m => m.slice(1));
-
-                        if (materiasAprobadasSoloEnJ.length > 0)
+                        if (no_sirve)
                             continue;
 
-                        if (materiasAprobadasSoloEnI.length == 0)
+                        // calcular las materias aprobadas en i pero no en j
+
+                        const filtradas = aprobaronI.filter(m => !aprobaronJ.includes(m));
+
+                        if (filtradas.length === 0)
                             continue;
 
-                        console.log("noAprobadasSOloEnI", materiasNoAprobadasSoloEnI);
+                        // entonces agregar un camino entre i y j, aprobando las filtradas
 
-                        if (!this.grafo[intermedios[i]]) this.grafo[intermedios[i]] = {};
+                        if (!this.grafo[intermedios[i]])
+                            this.grafo[intermedios[i]] = {};
+
                         this.grafo[intermedios[i]][intermedios[j]] = new ProbabilidadCalcular(
                             this,
-                            materiasAprobadasSoloEnI as IDMateria[],
-                            materiasNoAprobadasSoloEnI as IDMateria[]
+                            filtradas as IDMateria[],
+                            []
                         );
+
                     }
-                        
+
                 }
-                    */
             }
             else {
                 for (const desde of correlatividades[hasta]) {
