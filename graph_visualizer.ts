@@ -14,7 +14,7 @@ export class GraphVisualizer {
         // Add edges (which implicitly adds all nodes)
         for (const source in grafo) {
             for (const target in grafo[source]) {
-                dotStr += `  "${grafoObj.getName(source)}" -> "${grafoObj.getName(target)}" [label="${grafo[source][target]}"];\n`;
+                dotStr += `  "${grafoObj.getName(source)}" -> "${grafoObj.getName(target)}" [label="${grafo[source][target].toString()}"];\n`;
             }
         }
 

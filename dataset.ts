@@ -56,6 +56,7 @@ export const correlatividades: Correlatividades = {
     "6511": ["6421"]
 };
 
+/*
 const subjectMap = new Map([
     ["6111", "Introducción a la Programación I"],
     ["6112", "Análisis Matemático I"],
@@ -91,6 +92,43 @@ const subjectMap = new Map([
     ["6421", "Diseño de Sistemas de Software"],
     ["6422", "Diseño de Compiladores I"],
     ["6511", "Ingeniería de Software"]
+]);*/
+
+const subjectMap = new Map([
+    ["6111", "prog1"],
+    ["6112", "analisis1"],
+    ["6113", "algebra1"],
+    ["6114", "quimica"],
+    ["6121", "compu1"],
+    ["6122", "prog2"],
+    ["6123", "alglin"],
+    ["6124", "fisica1"],
+    ["6125", "discreta"],
+    ["6211", "compu2"],
+    ["6212", "aya1"],
+    ["6213", "arqsys"],
+    ["6214", "analisis2"],
+    ["6215", "electromag"],
+    ["6221", "aya2"],
+    ["6222", "redes1"],
+    ["6223", "probest"],
+    ["6224", "elecdig"],
+    ["6311", "poo"],
+    ["6312", "estructuras"],
+    ["6313", "metsoft"],
+    ["6314", "arqcomp1"],
+    ["6321", "progexp"],
+    ["6322", "bd1"],
+    ["6323", "lengprog1"],
+    ["6324", "sisop1"],
+    ["6325", "invop1"],
+    ["6411", "arqcomp2"],
+    ["6412", "teoinfo"],
+    ["6413", "redes2"],
+    ["6414", "calc1"],
+    ["6421", "dissw"],
+    ["6422", "compil1"],
+    ["6511", "ingsoft"]
 ]);
 
 // Función para obtener el nombre de la asignatura
