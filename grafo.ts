@@ -1,4 +1,4 @@
-import { Correlatividades, getNombreMateria, IDMateria } from "./dataset";
+import { Correlatividades, getNombreMateria, IDMateria, subjectMap } from "./dataset";
 import { ProbabilidadCalcular } from "./probabilidad";
 
 
@@ -79,6 +79,24 @@ export class Grafo {
         return intermedios[id];
     }
 
+    getEnlaces(desde: string): string[] {
+        return Object.keys(this.grafo[desde]);
+    }
+
+    getIDbyName(name: string) {
+
+        for (const id in subjectMap) {
+            if (subjectMap[id] === name)
+                return id;
+        }
+
+        return null;
+    }
+
+    getProbabilidad(desde: string, hasta: string) {
+        return this.grafo[desde][hasta];
+    }
+
     constructor(correlatividades: Correlatividades) {
 
         for (const hasta in correlatividades) {
@@ -118,7 +136,8 @@ export class Grafo {
                         );
                     }
                 }
-                // Agregar caminos entre intermedios ( no anda )
+
+                // Agregar caminos entre intermedios
 
                 for (let i = 0; i < intermedios.length; i++) {
                     for (let j = 0; j < intermedios.length; j++) {
@@ -157,8 +176,20 @@ export class Grafo {
                         );
 
                     }
-
                 }
+
+                // Agregar caminos directos cuando se hagan todas las materias juntas
+
+                const todas = this.getIntermedio(intermedios[0]).split(',').map(t => t[0] === '-' ? t.slice(1) : t);
+
+                for (const correlativa of correlatividades[hasta]) {
+                    this.grafo[correlativa][hasta] = new ProbabilidadCalcular(
+                        this,
+                        todas as IDMateria[],
+                        []
+                    );
+                }
+
             }
             else {
                 for (const desde of correlatividades[hasta]) {

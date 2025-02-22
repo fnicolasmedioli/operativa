@@ -25,7 +25,7 @@ export class ProbabilidadCalcular extends Probabilidad {
             s += `${this._aprobar.map(m => `Pa(${this._grafo.getName(m)})`).join(' AND ')}`;
 
         if (this._desaprobar.length > 0)
-            s += `\n${this._desaprobar.map(m => `Pd(${this._grafo.getName(m)})`).join(' AND ')}`;
+            s += ` AND ${this._desaprobar.map(m => `Pd(${this._grafo.getName(m)})`).join(' AND ')}`;
 
         if (s == "")
             s = "1";

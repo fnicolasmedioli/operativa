@@ -11,3 +11,16 @@ const grafo = new Grafo(correlatividades);
 const svg = await GraphVisualizer.visualize(grafo);
 
 writeFileSync('grafo.svg', svg);
+
+const enlaces = grafo.getEnlaces(grafo.getIDbyName("estructuras")!);
+
+console.log(enlaces);
+
+console.log("------");
+for (const enlace of enlaces) {
+    const nombre = grafo.getName(enlace);
+    const probabilidad = grafo.getProbabilidad(grafo.getIDbyName("estructuras")!, enlace);
+
+    console.log(`"${nombre}" con probabilidad ${probabilidad.toString()}`);
+}
+console.log("------")

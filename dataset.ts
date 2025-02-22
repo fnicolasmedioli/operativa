@@ -94,46 +94,46 @@ const subjectMap = new Map([
     ["6511", "Ingeniería de Software"]
 ]);*/
 
-const subjectMap = new Map([
-    ["6111", "intro_prog_1"],
-    ["6112", "analisis_1"],
-    ["6113", "algebra_1"],
-    ["6114", "quimica"],
-    ["6121", "cs_compu_1"],
-    ["6122", "intro_prog_2"],
-    ["6123", "alg_lin"],
-    ["6124", "fisica_1"],
-    ["6125", "discreta"],
-    ["6211", "cs_compu_2"],
-    ["6212", "ayda_1"],
-    ["6213", "intro_arqui_sitemas"],
-    ["6214", "analisis_2"],
-    ["6215", "electr_mag"],
-    ["6221", "ayda_2"],
-    ["6222", "com_datos_1"],
-    ["6223", "proba"],
-    ["6224", "elec_dig"],
-    ["6311", "objetos"],
-    ["6312", "estructuras"],
-    ["6313", "met_soft"],
-    ["6314", "arq_comp_1"],
-    ["6321", "prog_expl"],
-    ["6322", "bd_1"],
-    ["6323", "leng_prog_1"],
-    ["6324", "sisop_1"],
-    ["6325", "inv_op_1"],
-    ["6411", "arq_comp_2"],
-    ["6412", "teo_info"],
-    ["6413", "redes_2"],
-    ["6414", "calc_1"],
-    ["6421", "diseno_soft"],
-    ["6422", "compi_1"],
-    ["6511", "ing_soft"]
-]);
+export const subjectMap: { [key: string]: string } = {
+    "6111": "intro_prog_1",
+    "6112": "analisis_1",
+    "6113": "algebra_1",
+    "6114": "quimica",
+    "6121": "cs_compu_1",
+    "6122": "intro_prog_2",
+    "6123": "alg_lin",
+    "6124": "fisica_1",
+    "6125": "discreta",
+    "6211": "cs_compu_2",
+    "6212": "ayda_1",
+    "6213": "intro_arqui_sitemas",
+    "6214": "analisis_2",
+    "6215": "electr_mag",
+    "6221": "ayda_2",
+    "6222": "com_datos_1",
+    "6223": "proba",
+    "6224": "elec_dig",
+    "6311": "objetos",
+    "6312": "estructuras",
+    "6313": "met_soft",
+    "6314": "arq_comp_1",
+    "6321": "prog_expl",
+    "6322": "bd_1",
+    "6323": "leng_prog_1",
+    "6324": "sisop_1",
+    "6325": "inv_op_1",
+    "6411": "arq_comp_2",
+    "6412": "teo_info",
+    "6413": "redes_2",
+    "6414": "calc_1",
+    "6421": "diseno_soft",
+    "6422": "compi_1",
+    "6511": "ing_soft"
+};
 
 // Función para obtener el nombre de la asignatura
 export function getNombreMateria(code: string): string {
-    return subjectMap.get(code) || "[error xd]";
+    return subjectMap[code] || "[error xd]";
 }
 
 export const getRandomDataset = (): Dataset1 => {
