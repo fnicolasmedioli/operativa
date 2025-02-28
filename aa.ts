@@ -8,19 +8,27 @@ import { Grafo } from "./grafo";
 
 const grafo = new Grafo(correlatividades);
 
-const svg = await GraphVisualizer.visualize(grafo);
 
-writeFileSync('grafo.svg', svg);
+console.log("force graph");
+console.log(JSON.stringify(grafo.getForceGraph()));
 
-const enlaces = grafo.getEnlaces(grafo.getIDbyName("estructuras")!);
 
-console.log(enlaces);
+//const svg = await GraphVisualizer.visualize(grafo);
+
+//writeFileSync('grafo.svg', svg);
+
+/*
+const enlaces = grafo.getEnlaces("6421");
+
+console.log("enlaces: ",enlaces);
 
 console.log("------");
 for (const enlace of enlaces) {
     const nombre = grafo.getName(enlace);
-    const probabilidad = grafo.getProbabilidad(grafo.getIDbyName("estructuras")!, enlace);
+    console.log("nombre: ",nombre);
+    const probabilidad = grafo.getProbabilidad("6421", enlace);
 
     console.log(`"${nombre}" con probabilidad ${probabilidad.toString()}`);
 }
-console.log("------")
+console.log("------");
+*/

@@ -62,6 +62,35 @@ export class Grafo {
 
     grafo = {};
 
+
+    getForceGraph() {
+        const nodes: any[] = [];
+        const links: any[] = [];
+
+        for (const source in this.grafo) {
+            console.log("se agregará", source);
+            nodes.push({ id: source, text: this.getName(source), esIntermedio: Number(source) < 3000 });
+        }
+
+        for (const source in this.grafo) {
+            for (const target in this.grafo[source]) {
+
+                if (!nodes.find(n => n.id === target))
+                    console.log('No se encontró', target);
+
+                if (!nodes.find(n => n.id === source))
+                    console.log('No se encontró', source);
+
+                if (source !== target)
+                    links.push({ source, target, value: this.grafo[source][target].toString() });
+                else
+                    links.push({ source, target, curvature: 1 });
+            }
+        }
+
+        return { nodes, links };
+    }
+
     getName(id: string) {
 
         if (intermedios[id]) {
@@ -110,8 +139,9 @@ export class Grafo {
 
             if (intermedios) {
                 for (const intermedio of intermedios) {
-                    if (!this.grafo[intermedio])
-                        this.grafo[intermedio] = {};
+
+                    if (!this.grafo[intermedio]) this.grafo[intermedio] = {};
+                    if (!this.grafo[hasta]) this.grafo[hasta] = {};
 
                     const faltan = this.getIntermedio(intermedio).split(',').filter(m => m[0] === '-').map(m => m.slice(1));
 
@@ -123,8 +153,7 @@ export class Grafo {
                 }
                 for (const correlativa of correlatividades[hasta]) {
                     for (const intermedio of intermedios) {
-                        if (!this.grafo[correlativa])
-                            this.grafo[correlativa] = {};
+                        if (!this.grafo[correlativa]) this.grafo[correlativa] = {};
 
                         const aprobaron = this.getIntermedio(intermedio).split(',').filter(m => m[0] !== '-');
                         const desaprobaron = this.getIntermedio(intermedio).split(',').filter(m => m[0] === '-').map(m => m.slice(1));
@@ -166,8 +195,8 @@ export class Grafo {
 
                         // entonces agregar un camino entre i y j, aprobando las filtradas
 
-                        if (!this.grafo[intermedios[i]])
-                            this.grafo[intermedios[i]] = {};
+                        if (!this.grafo[intermedios[i]]) this.grafo[intermedios[i]] = {};
+                        if (!this.grafo[intermedios[j]]) this.grafo[intermedios[j]] = {};
 
                         this.grafo[intermedios[i]][intermedios[j]] = new ProbabilidadCalcular(
                             this,
@@ -193,8 +222,9 @@ export class Grafo {
             }
             else {
                 for (const desde of correlatividades[hasta]) {
-                    if (!this.grafo[desde])
-                        this.grafo[desde] = {};
+                    if (!this.grafo[desde]) this.grafo[desde] = {};
+                    if (!this.grafo[hasta]) this.grafo[hasta] = {};
+
                     this.grafo[desde][hasta] = new ProbabilidadCalcular(
                         this,
                         [desde] as IDMateria[],
@@ -203,5 +233,18 @@ export class Grafo {
                 }
             }
         }
+
+        // Agregar autoenlaces
+
+        for (const materia in correlatividades) {
+            if (!this.grafo[materia]) this.grafo[materia] = {};
+
+            this.grafo[materia][materia] = new ProbabilidadCalcular(
+                this,
+                [],
+                [materia] as IDMateria[]
+            );
+        }
+
     }
 }

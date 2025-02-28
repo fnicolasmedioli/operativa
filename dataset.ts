@@ -106,7 +106,7 @@ export const subjectMap: { [key: string]: string } = {
     "6125": "discreta",
     "6211": "cs_compu_2",
     "6212": "ayda_1",
-    "6213": "intro_arqui_sitemas",
+    "6213": "intro_arqui_sistemas",
     "6214": "analisis_2",
     "6215": "electr_mag",
     "6221": "ayda_2",
