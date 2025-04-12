@@ -1,4 +1,4 @@
-import { Correlatividades, getNombreMateria, IDMateria, subjectMap } from "./dataset";
+import { correlatividades, Correlatividades, getNombreMateria, IDMateria, subjectMap } from "./dataset";
 import { ProbabilidadCalcular } from "./probabilidad";
 
 
@@ -54,6 +54,63 @@ function generarCombinaciones3(a: IDMateria, b: IDMateria, c: IDMateria) {
     random = Math.floor(Math.random() * 3000);
     intermedios[random] = `-${a},-${b},-${c}`;
     keys.push(random.toString());
+
+    return keys;
+}
+
+function generarCombinacionesN(...materias: IDMateria[]): string[] {
+    const keys: string[] = [];
+
+    const combinaciones: string[][] = [];
+
+    // Función recursiva para generar combinaciones de signos
+    function generar(idx: number, actual: string[]) {
+        if (idx === materias.length) {
+            combinaciones.push([...actual]);
+            return;
+        }
+
+        // Versión positiva
+        actual.push(materias[idx]);
+        generar(idx + 1, actual);
+        actual.pop();
+
+        // Versión negativa
+        actual.push(`-${materias[idx]}`);
+        generar(idx + 1, actual);
+        actual.pop();
+    }
+
+    generar(0, []);
+
+    for (const combo of combinaciones) {
+        const random = Math.floor(Math.random() * 3000);
+
+        console.log("combo");
+        console.log(combo);
+
+        let esValido = true;
+
+        for (const i in combo) {
+            if (combo[i][0] === '-') {
+                for (const j in combo) {
+                    const sinGuion = combo[j][0] === '-' ? combo[j].slice(1) : combo[j];
+                    console.log("csada", correlatividades[sinGuion]);
+                    console.log(combo[i].slice(1));
+                    if (i == j) continue;
+                    if (correlatividades[sinGuion].includes(combo[i].slice(1))) {
+                        console.log("se elimina una combinacion invalida");
+                        esValido = false;
+                    }
+                }
+            }
+        }
+
+        if (esValido) {
+            intermedios[random] = combo.join(',');
+            keys.push(random.toString());
+        }
+    }
 
     return keys;
 }
@@ -133,9 +190,10 @@ export class Grafo {
             let intermedios: null | string[] = null;
 
             if (correlatividades[hasta].length === 2)
-                intermedios = generarCombinaciones2(correlatividades[hasta][0], correlatividades[hasta][1]);
+                // intermedios = generarCombinaciones2(correlatividades[hasta][0], correlatividades[hasta][1]);
+                intermedios = generarCombinacionesN(correlatividades[hasta][0], correlatividades[hasta][1]);
             else if (correlatividades[hasta].length === 3)
-                intermedios = generarCombinaciones3(correlatividades[hasta][0], correlatividades[hasta][1], correlatividades[hasta][2]);
+                intermedios = generarCombinacionesN(correlatividades[hasta][0], correlatividades[hasta][1], correlatividades[hasta][2]);
 
             if (intermedios) {
                 for (const intermedio of intermedios) {

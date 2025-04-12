@@ -122,8 +122,6 @@ export function analyzeMateriaPassingProbabilities(
 
 
 
-
-
 const dataset = getRandomDataset();
 const validationResult = validateDataset(dataset);
 console.log("Invalid enrollments found:", (validationResult.invalidEnrollments.length) ? validationResult.invalidEnrollments : "No invalid enrollments found");
@@ -131,4 +129,4 @@ console.log("Invalid enrollments found:", (validationResult.invalidEnrollments.l
 guardarDataset(dataset, "dataset.json");
 
 
-analyzeMateriaPassingProbabilities(dataset, 6112);
+//analyzeMateriaPassingProbabilities(dataset, 6112);

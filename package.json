@@ -21,6 +21,7 @@
   "description": "",
   "dependencies": {
     "@viz-js/viz": "^3.11.0",
+    "http-server": "^14.1.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   },
