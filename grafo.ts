@@ -1,62 +1,7 @@
-import { correlatividades, Correlatividades, getNombreMateria, IDMateria, subjectMap } from "./dataset";
+import { plan, IDMateria, Plan } from "./dataset";
 import { ProbabilidadCalcular } from "./probabilidad";
 
-
 const intermedios = {};
-
-function generarCombinaciones2(a: IDMateria, b: IDMateria) {
-
-    const keys: string[] = [];
-
-    let random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `${a},-${b}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},${b}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},-${b}`;
-    keys.push(random.toString());
-
-    return keys;
-}
-
-function generarCombinaciones3(a: IDMateria, b: IDMateria, c: IDMateria) {
-
-    const keys: string[] = [];
-
-    let random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `${a},${b},-${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `${a},-${b},${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `${a},-${b},-${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},${b},${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},${b},-${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},-${b},${c}`;
-    keys.push(random.toString());
-
-    random = Math.floor(Math.random() * 3000);
-    intermedios[random] = `-${a},-${b},-${c}`;
-    keys.push(random.toString());
-
-    return keys;
-}
 
 function generarCombinacionesN(...materias: IDMateria[]): string[] {
     const keys: string[] = [];
@@ -86,30 +31,8 @@ function generarCombinacionesN(...materias: IDMateria[]): string[] {
     for (const combo of combinaciones) {
         const random = Math.floor(Math.random() * 3000);
 
-        console.log("combo");
-        console.log(combo);
-
-        let esValido = true;
-
-        for (const i in combo) {
-            if (combo[i][0] === '-') {
-                for (const j in combo) {
-                    const sinGuion = combo[j][0] === '-' ? combo[j].slice(1) : combo[j];
-                    console.log("csada", correlatividades[sinGuion]);
-                    console.log(combo[i].slice(1));
-                    if (i == j) continue;
-                    if (correlatividades[sinGuion].includes(combo[i].slice(1))) {
-                        console.log("se elimina una combinacion invalida");
-                        esValido = false;
-                    }
-                }
-            }
-        }
-
-        if (esValido) {
-            intermedios[random] = combo.join(',');
-            keys.push(random.toString());
-        }
+        intermedios[random] = combo.join(',');
+        keys.push(random.toString());
     }
 
     return keys;
@@ -119,15 +42,12 @@ export class Grafo {
 
     grafo = {};
 
-
     getForceGraph() {
         const nodes: any[] = [];
         const links: any[] = [];
 
-        for (const source in this.grafo) {
-            console.log("se agregará", source);
+        for (const source in this.grafo)
             nodes.push({ id: source, text: this.getName(source), esIntermedio: Number(source) < 3000 });
-        }
 
         for (const source in this.grafo) {
             for (const target in this.grafo[source]) {
@@ -154,11 +74,11 @@ export class Grafo {
             const sep = intermedios[id].split(',');
             return sep.map(id => {
                 if (id[0] === '-')
-                    return `NOT ${getNombreMateria(id.slice(1))}`;
-                return getNombreMateria(id);
+                    return `NOT ${plan[id.slice(1)].nombreCorto}`;
+                return plan[id].nombreCorto;
             }).join(' AND ');
         }
-        return getNombreMateria(id);
+        return plan[id].nombreCorto;
     }
 
     getIntermedio(id: string) {
@@ -171,8 +91,8 @@ export class Grafo {
 
     getIDbyName(name: string) {
 
-        for (const id in subjectMap) {
-            if (subjectMap[id] === name)
+        for (const id in plan) {
+            if (plan[id].nombreCorto === name || plan[id].nombre === name)
                 return id;
         }
 
@@ -183,17 +103,14 @@ export class Grafo {
         return this.grafo[desde][hasta];
     }
 
-    constructor(correlatividades: Correlatividades) {
+    constructor(plan: Plan) {
 
-        for (const hasta in correlatividades) {
+        for (const hasta in plan) {
 
             let intermedios: null | string[] = null;
 
-            if (correlatividades[hasta].length === 2)
-                // intermedios = generarCombinaciones2(correlatividades[hasta][0], correlatividades[hasta][1]);
-                intermedios = generarCombinacionesN(correlatividades[hasta][0], correlatividades[hasta][1]);
-            else if (correlatividades[hasta].length === 3)
-                intermedios = generarCombinacionesN(correlatividades[hasta][0], correlatividades[hasta][1], correlatividades[hasta][2]);
+            if (plan[hasta].correlativasDirectas.length >= 2)
+                intermedios = generarCombinacionesN(...plan[hasta].correlativasDirectas);
 
             if (intermedios) {
                 for (const intermedio of intermedios) {
@@ -209,7 +126,7 @@ export class Grafo {
                         []
                     );
                 }
-                for (const correlativa of correlatividades[hasta]) {
+                for (const correlativa of plan[hasta]['correlativasDirectas']) {
                     for (const intermedio of intermedios) {
                         if (!this.grafo[correlativa]) this.grafo[correlativa] = {};
 
@@ -269,7 +186,7 @@ export class Grafo {
 
                 const todas = this.getIntermedio(intermedios[0]).split(',').map(t => t[0] === '-' ? t.slice(1) : t);
 
-                for (const correlativa of correlatividades[hasta]) {
+                for (const correlativa of plan[hasta]["correlativasDirectas"]) {
                     this.grafo[correlativa][hasta] = new ProbabilidadCalcular(
                         this,
                         todas as IDMateria[],
@@ -279,7 +196,7 @@ export class Grafo {
 
             }
             else {
-                for (const desde of correlatividades[hasta]) {
+                for (const desde of plan[hasta]["correlativasDirectas"]) {
                     if (!this.grafo[desde]) this.grafo[desde] = {};
                     if (!this.grafo[hasta]) this.grafo[hasta] = {};
 
@@ -294,7 +211,7 @@ export class Grafo {
 
         // Agregar autoenlaces
 
-        for (const materia in correlatividades) {
+        for (const materia in plan) {
             if (!this.grafo[materia]) this.grafo[materia] = {};
 
             this.grafo[materia][materia] = new ProbabilidadCalcular(
