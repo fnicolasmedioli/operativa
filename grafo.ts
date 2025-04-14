@@ -68,8 +68,9 @@ export class Grafo {
 
         // Generar nodo inicial
 
-        this.grafo["0000-"] = new Nodo("0000-", "Inicio", "Inicio", false, []);
+        this.grafo["0000-"] = new Nodo("0000-", "Inicio", "Inicio", false, [], "9cd141");
 
+        this.iteracion();
         this.iteracion();
         this.iteracion();
         this.iteracion();
@@ -113,20 +114,16 @@ export class Grafo {
 
             //console.log("lleva aprobadas: ", extraerAprobadas(idNodo));
 
-            console.log("ap", extraerAprobadas(idNodo))
 
             const idCombinacion = combinacionToID(combinacion, [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
 
-            console.log("idCombinacion:", idCombinacion);
-
-
-            console.log([...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)]);
+            const nombreNodo = combinacion.map(m => this.getNombre(m)).join(", ");
 
             if (!this.grafo[idCombinacion]) {
                 this.grafo[idCombinacion] = new Nodo(
                     idCombinacion,
-                    idCombinacion,
-                    idCombinacion,
+                    nombreNodo,
+                    nombreNodo,
                     false,
                     []
                 );
@@ -174,19 +171,16 @@ export class Grafo {
     }
 
     getNombre(id: string) {
-        for (const key in this.grafo) {
-            if (key === id) {
-                return this.grafo[key].nombre;
-            }
-        }
+        if (id === "0000") return "Inicio";
+        console.log("id al q se busca nombre ", id);
+        return plan[id].nombre;
     }
 
     getNombreCorto(id: string) {
-        for (const key in this.grafo) {
-            if (key === id) {
-                return this.grafo[key].nombreCorto;
-            }
-        }
+        if (id === "0000") return "Inicio";
+        console.log("id al q se busca nombre corto", id);
+
+        return plan[id].nombreCorto;
     }
 
     getForceGraph() {
@@ -195,7 +189,7 @@ export class Grafo {
         const links: any[] = [];
 
         for (const source in this.grafo)
-            nodes.push({ id: source, text: this.getNombreCorto(source), esIntermedio: Number(source) < 3000 });
+            nodes.push({ id: source, text: extraerCombinacion(source).map(m => this.getNombreCorto(m)), esIntermedio: Number(source) < 3000 });
 
         for (const source in this.grafo) {
 
