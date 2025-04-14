@@ -1,34 +1,19 @@
 import { plan, IDMateria } from "./dataset";
-import { write, writeFileSync } from "fs";
-import { instance } from "@viz-js/viz";
-import { GraphVisualizer } from "./graph_visualizer";
+import { readFileSync, write, writeFileSync } from "fs";
 import { Grafo } from "./grafo";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const grafo = new Grafo(plan);
+const graphData = JSON.stringify(grafo.getForceGraph());
 
+const templatePath = join(__dirname, "template.txt");
+const template = readFileSync(templatePath, "utf-8");
+const finalHtml = template.replace("{{GRAPH_DATA}}", graphData);
+const outputPath = join(__dirname, "index.html");
+writeFileSync(outputPath, finalHtml);
 
-console.log("force graph");
-console.log(JSON.stringify(grafo.getForceGraph()));
-
-
-//const svg = await GraphVisualizer.visualize(grafo);
-
-//writeFileSync('grafo.svg', svg);
-
-/*
-const enlaces = grafo.getEnlaces("6421");
-
-console.log("enlaces: ",enlaces);
-
-console.log("------");
-for (const enlace of enlaces) {
-    const nombre = grafo.getName(enlace);
-    console.log("nombre: ",nombre);
-    const probabilidad = grafo.getProbabilidad("6421", enlace);
-
-    console.log(`"${nombre}" con probabilidad ${probabilidad.toString()}`);
-}
-console.log("------");
-*/
+console.log("✅ Archivo index.html generado con éxito.");

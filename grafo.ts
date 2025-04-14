@@ -1,66 +1,205 @@
 import { plan, IDMateria, Plan } from "./dataset";
-import { ProbabilidadCalcular } from "./probabilidad";
+import { Nodo } from "./nodo";
+import { Probabilidad, ProbabilidadCalcular } from "./probabilidad";
 
-const intermedios = {};
 
-function generarCombinacionesN(...materias: IDMateria[]): string[] {
-    const keys: string[] = [];
+type GrafoInterno = {
+    [key: string]: Nodo;
+}
 
-    const combinaciones: string[][] = [];
+/**
+ * Retorna todas las combinaciones posibles de tamaño k de un array
+ */
+function calcCombinaciones<T>(arr: T[], k: number): T[][] {
+    const result: T[][] = [];
 
-    function generar(idx: number, actual: string[]) {
-        if (idx === materias.length) {
-            // Verificar si al menos uno no es negativo y si hay solo un positivo
-            const tienePositiva = actual.some(id => id[0] !== '-');
-            const tieneSoloUnPositivo = actual.filter(id => id[0] !== '-').length === 1;
-
-            // Solo agregar si hay al menos una positiva y no es un único positivo
-            if (tienePositiva && !tieneSoloUnPositivo) {
-                combinaciones.push([...actual]);
-            }
+    function backtrack(start: number, path: T[]) {
+        if (path.length === k) {
+            result.push([...path]);
             return;
         }
 
-        // Versión positiva
-        actual.push(materias[idx]);
-        generar(idx + 1, actual);
-        actual.pop();
-
-        // Versión negativa
-        actual.push(`-${materias[idx]}`);
-        generar(idx + 1, actual);
-        actual.pop();
+        for (let i = start; i < arr.length; i++) {
+            path.push(arr[i]);
+            backtrack(i + 1, path);
+            path.pop();
+        }
     }
 
-
-    generar(0, []);
-
-    for (const combo of combinaciones) {
-        const random = Math.floor(Math.random() * 3000);
-
-        intermedios[random] = combo.join(',');
-        keys.push(random.toString());
-    }
-
-    return keys;
+    backtrack(0, []);
+    return result;
 }
+
+function esCombinacionDirecta(correlativas: IDMateria[], combinacion: IDMateria[]): boolean {
+    const correlativasSet = new Set(correlativas);
+    return combinacion.every(item => correlativasSet.has(item));
+}
+
+function combinacionToID(combinacion: IDMateria[], aprobadas: IDMateria[]): string {
+
+    function ordenar(combinacion: IDMateria[]): IDMateria[] {
+        return combinacion.sort((a, b) => {
+            return (a < b) ? -1 : (a > b) ? 1 : 0;
+        });
+    }
+
+    return ordenar(combinacion).filter(t => t).join(",") + "-" + ordenar(aprobadas).filter(t => t).join(",");
+}
+
+
+function extraerAprobadas(idNodo) {
+    const partes = idNodo.split("-");
+    const aprobadas = partes[1].split(",").map(m => m.trim());
+    return aprobadas;
+}
+
+function extraerCombinacion(idNodo) {
+    const partes = idNodo.split("-");
+    const combinacion = partes[0].split(",").map(m => m.trim());
+    return combinacion;
+}
+
 
 export class Grafo {
 
-    grafo = {};
-    nodoMateriasAprobadas: Record<string, string[]> = {};
-    yaAprobadasPorNodo: { [id: string]: IDMateria[] } = {};
+    grafo: GrafoInterno = {};
 
+    constructor(plan: Plan) {
+
+        // Generar nodo inicial
+
+        this.grafo["0000-"] = new Nodo("0000-", "Inicio", "Inicio", false, []);
+
+        this.iteracion();
+        this.iteracion();
+        this.iteracion();
+    }
+
+    iteracion() {
+
+        // Tomar todos los nodos no expandidos
+
+        const nodosNoExpandidos = Object.values(this.grafo).filter(nodo => !nodo.expandido).map(nodo => nodo.id);
+
+        for (const idNodo of nodosNoExpandidos) {
+            this.expandirNodo(idNodo);
+        }
+
+    }
+
+    expandirNodo(idNodo: string) {
+
+        console.log("Expandiendo nodo", idNodo);
+
+        const nodo = this.grafo[idNodo];
+
+        // Calcular estados a los que se puede pasar desde el nodo actual
+
+        const cursables = this.getCursables([...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
+        console.log(cursables)
+
+        const combinaciones: IDMateria[][] = [];
+
+        for (let k = 1; k <= cursables.length; k++) {
+            const combinacionesK = calcCombinaciones(cursables, k);
+            combinaciones.push(...combinacionesK);
+        }
+
+        // Agregar los nuevos estados al grafo
+
+        for (const combinacion of combinaciones) {
+
+            //console.log("idNodo:", idNodo);
+
+            //console.log("lleva aprobadas: ", extraerAprobadas(idNodo));
+
+            console.log("ap", extraerAprobadas(idNodo))
+
+            const idCombinacion = combinacionToID(combinacion, [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
+
+            console.log("idCombinacion:", idCombinacion);
+
+
+            console.log([...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)]);
+
+            if (!this.grafo[idCombinacion]) {
+                this.grafo[idCombinacion] = new Nodo(
+                    idCombinacion,
+                    idCombinacion,
+                    idCombinacion,
+                    false,
+                    []
+                );
+            }
+        }
+
+
+        this.grafo[idNodo].salientes = combinaciones.map(
+            combinacion => combinacionToID(
+                combinacion,
+                [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any
+            )
+        );
+
+        this.grafo[idNodo].expandido = true;
+
+
+    }
+
+    /**
+     * Obtiene una lista de las asignaturas que se pueden cursar teniendo aprobadas las de la lista
+     */
+    getCursables(aprobadas: IDMateria[]): IDMateria[] {
+
+        console.log("aprobadas:", aprobadas);
+
+        const cursables: IDMateria[] = [];
+
+        for (const idMateria in plan) {
+
+            if (aprobadas.includes(idMateria as IDMateria)) continue;
+
+            let puedeCursar = true;
+            for (const correlativa of plan[idMateria].correlativasDirectas)
+                if (!aprobadas.includes(correlativa))
+                    puedeCursar = false;
+
+            if (puedeCursar)
+                cursables.push(idMateria as IDMateria);
+        }
+
+        console.log("cursables:", cursables);
+
+        return cursables;
+    }
+
+    getNombre(id: string) {
+        for (const key in this.grafo) {
+            if (key === id) {
+                return this.grafo[key].nombre;
+            }
+        }
+    }
+
+    getNombreCorto(id: string) {
+        for (const key in this.grafo) {
+            if (key === id) {
+                return this.grafo[key].nombreCorto;
+            }
+        }
+    }
 
     getForceGraph() {
+
         const nodes: any[] = [];
         const links: any[] = [];
 
         for (const source in this.grafo)
-            nodes.push({ id: source, text: this.getName(source), esIntermedio: Number(source) < 3000 });
+            nodes.push({ id: source, text: this.getNombreCorto(source), esIntermedio: Number(source) < 3000 });
 
         for (const source in this.grafo) {
-            for (const target in this.grafo[source]) {
+
+            for (const target of this.grafo[source].salientes) {
 
                 if (!nodes.find(n => n.id === target))
                     console.log('No se encontró', target);
@@ -69,144 +208,12 @@ export class Grafo {
                     console.log('No se encontró', source);
 
                 if (source !== target)
-                    links.push({ source, target, value: this.grafo[source][target].toString() });
+                    links.push({ source, target, value: "" });
                 else
                     links.push({ source, target, curvature: 1 });
             }
         }
 
         return { nodes, links };
-    }
-
-    getYaAprobado(id: string): IDMateria[] {
-        if (!this.yaAprobadasPorNodo[id]) {
-            this.yaAprobadasPorNodo[id] = [];
-        }
-        return this.yaAprobadasPorNodo[id];
-    }
-
-    getName(id: string) {
-
-        if (intermedios[id]) {
-            const sep = intermedios[id].split(',');
-
-            return sep
-                .filter(id => id[0] !== '-') // solo los válidos
-                .map(id => plan[id].nombreCorto)
-                .join(' AND ');
-
-        }
-        return plan[id].nombreCorto;
-    }
-
-    getIntermedio(id: string) {
-        return intermedios[id];
-    }
-
-    getEnlaces(desde: string): string[] {
-        return Object.keys(this.grafo[desde]);
-    }
-
-    getIDbyName(name: string) {
-
-        for (const id in plan) {
-            if (plan[id].nombreCorto === name || plan[id].nombre === name)
-                return id;
-        }
-
-        return null;
-    }
-
-    getProbabilidad(desde: string, hasta: string) {
-        return this.grafo[desde][hasta];
-    }
-
-    constructor(plan: Plan) {
-
-        const obtenerMateriasHabilitadas = (plan: Plan, materiasAprobadas: string[]): string[] => {
-            return Object.entries(plan)
-                .filter(([codigo, materia]) =>
-                    codigo !== "0000" &&
-                    materia.correlativasDirectas.every(correlativa => materiasAprobadas.includes(correlativa)) &&
-                    !materiasAprobadas.includes(codigo)
-                )
-                .map(([codigo]) => codigo);
-        };
-
-        const obtenerCombinaciones = (materias: string[]): string[][] => {
-            const resultado: string[][] = [];
-            const n = materias.length;
-
-            for (let i = 1; i < (1 << n); i++) { // 1 a 2^n - 1
-                const combinacion: string[] = [];
-                for (let j = 0; j < n; j++) {
-                    if (i & (1 << j)) {
-                        combinacion.push(materias[j]);
-                    }
-                }
-                if (combinacion.length > 1) {
-                    resultado.push(combinacion);
-                }
-            }
-
-            return resultado;
-        };
-
-        const procesarNodoRecursivo = (idNodo: string, materiasAprobadas: string[]) => {
-            const nuevasHabilitadas = obtenerMateriasHabilitadas(plan, materiasAprobadas);
-            const nuevasCombinaciones = obtenerCombinaciones(nuevasHabilitadas);
-
-            for (const combinacion of nuevasCombinaciones) {
-                const nuevoIdIntermedio = Math.floor(Math.random() * 3000).toString();
-                intermedios[nuevoIdIntermedio] = combinacion.join(',');
-
-                if (!this.grafo[idNodo]) this.grafo[idNodo] = {};
-                this.grafo[idNodo][nuevoIdIntermedio] = new ProbabilidadCalcular(this, materiasAprobadas as IDMateria[], []);
-
-                if (!this.grafo[nuevoIdIntermedio]) this.grafo[nuevoIdIntermedio] = {};
-
-                for (const materia of combinacion) {
-                    if (!this.grafo[materia]) this.grafo[materia] = {};
-
-                    this.grafo[nuevoIdIntermedio][materia] = new ProbabilidadCalcular(this, [materia as IDMateria], []);
-
-                    const acumulado = [
-                        ...(this.getYaAprobado(nuevoIdIntermedio) ?? []),
-                        ...(this.getYaAprobado(idNodo) ?? []),
-                        materia as IDMateria
-                    ];
-
-                    this.yaAprobadasPorNodo[materia] = Array.from(new Set(acumulado));
-                }
-
-                this.yaAprobadasPorNodo[nuevoIdIntermedio] = Array.from(new Set([
-                    ...materiasAprobadas,
-                    ...combinacion
-                ])) as IDMateria[];
-
-                procesarNodoRecursivo(nuevoIdIntermedio, this.yaAprobadasPorNodo[nuevoIdIntermedio]);
-            }
-        };
-
-        // Inicializar el grafo con self-loops
-        for (const id in this.grafo) {
-            if (!this.grafo[id]) this.grafo[id] = {};
-            if (!this.grafo[id][id]) {
-                this.grafo[id][id] = new ProbabilidadCalcular(this, [id] as IDMateria[], []);
-            }
-        }
-
-        // Conectar el nodo inicial "0000" a todas las materias sin correlativas directas
-        for (const id in plan) {
-            if (plan[id].correlativasDirectas.length === 0 && id !== "0000") {
-                if (!this.grafo["0000"]) this.grafo["0000"] = {};
-                if (!this.grafo[id]) this.grafo[id] = {};
-
-                this.grafo["0000"][id] = new ProbabilidadCalcular(this, [<IDMateria>"0000"], []);
-            }
-        }
-
-        // Procesar recursivamente desde el nodo inicial
-        procesarNodoRecursivo("0000", []);
     }
 }

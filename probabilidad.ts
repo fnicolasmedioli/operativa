@@ -22,7 +22,7 @@ export class ProbabilidadCalcular extends Probabilidad {
         let s = "";
 
         if (this._aprobar.length > 0)
-            s += `${this._aprobar.map(m => `Pa(${this._grafo.getName(m)})`).join(' AND ')}`;
+            s += `${this._aprobar.map(m => `P(${this._grafo.getName(m)})`).join(' AND ')}`;
 
         if (this._desaprobar.length > 0) {
             if (s != "")
