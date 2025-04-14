@@ -123,53 +123,17 @@ export class Grafo {
 
     constructor(plan: Plan) {
 
-        // Al final del constructor del Grafo
-        for (const id in this.grafo) {
-            if (!this.grafo[id]) this.grafo[id] = {};
-
-            // Si no existe un loop todavía
-            if (!this.grafo[id][id]) {
-                this.grafo[id][id] = new ProbabilidadCalcular(
-                    this,
-                    [id] as IDMateria[],
-                    []
-                );
-            }
-        }
-
-        // Conectar el nodo inicial "0000" a todas las materias sin correlativas directas
-        for (const id in plan) {
-            if (plan[id].correlativasDirectas.length === 0 && id !== "0000") {
-                if (!this.grafo["0000"]) this.grafo["0000"] = {};
-                if (!this.grafo[id]) this.grafo[id] = {};
-
-                this.grafo["0000"][id] = new ProbabilidadCalcular(
-                    this,
-                    [<IDMateria>"0000"],
-                    []
-                );
-            }
-        }
-
-        const materiasSinCorrelativas = Object.entries(plan)
-            .filter(([id, mat]) => mat.correlativasDirectas.length === 0 && id !== "0000")
-            .map(([id]) => id);
-
-
-
-
-        function obtenerMateriasHabilitadas(plan: Plan, materiasAprobadas: string[]): string[] {
+        const obtenerMateriasHabilitadas = (plan: Plan, materiasAprobadas: string[]): string[] => {
             return Object.entries(plan)
                 .filter(([codigo, materia]) =>
-                    codigo !== "0000" && // 👈 Ignorar el nodo inicial
+                    codigo !== "0000" &&
                     materia.correlativasDirectas.every(correlativa => materiasAprobadas.includes(correlativa)) &&
                     !materiasAprobadas.includes(codigo)
                 )
                 .map(([codigo]) => codigo);
-        }
+        };
 
-
-        function obtenerCombinaciones(materias: string[]): string[][] {
+        const obtenerCombinaciones = (materias: string[]): string[][] => {
             const resultado: string[][] = [];
             const n = materias.length;
 
@@ -180,138 +144,69 @@ export class Grafo {
                         combinacion.push(materias[j]);
                     }
                 }
-
-                if (combinacion.length <= 1) continue; // Evitar combinaciones vacías
-
-                resultado.push(combinacion);
+                if (combinacion.length > 1) {
+                    resultado.push(combinacion);
+                }
             }
 
             return resultado;
-        }
+        };
 
-        const materiasAprobadas = []; // al inicio
-        const materiasHabilitadas = obtenerMateriasHabilitadas(plan, materiasAprobadas);
-        const combinaciones_iniciales = obtenerCombinaciones(materiasHabilitadas);
+        const procesarNodoRecursivo = (idNodo: string, materiasAprobadas: string[]) => {
+            const nuevasHabilitadas = obtenerMateriasHabilitadas(plan, materiasAprobadas);
+            const nuevasCombinaciones = obtenerCombinaciones(nuevasHabilitadas);
 
-        console.log("Combinaciones posibles al inicio:");
-        console.log(combinaciones_iniciales);
+            for (const combinacion of nuevasCombinaciones) {
+                const nuevoIdIntermedio = Math.floor(Math.random() * 3000).toString();
+                intermedios[nuevoIdIntermedio] = combinacion.join(',');
 
+                if (!this.grafo[idNodo]) this.grafo[idNodo] = {};
+                this.grafo[idNodo][nuevoIdIntermedio] = new ProbabilidadCalcular(this, materiasAprobadas as IDMateria[], []);
 
+                if (!this.grafo[nuevoIdIntermedio]) this.grafo[nuevoIdIntermedio] = {};
 
-        // Generar combinaciones válidas de esas materias (sin la vacía)
-        const combinacionesIniciales = obtenerCombinaciones(materiasSinCorrelativas);
+                for (const materia of combinacion) {
+                    if (!this.grafo[materia]) this.grafo[materia] = {};
 
-        for (const combinacion of combinacionesIniciales) {
-            // Crear un nodo intermedio único
-            const random = Math.floor(Math.random() * 3000);
-            const idIntermedio = random.toString();
-            intermedios[idIntermedio] = combinacion.join(',');
+                    this.grafo[nuevoIdIntermedio][materia] = new ProbabilidadCalcular(this, [materia as IDMateria], []);
 
-            this.grafo["0000"][idIntermedio] = new ProbabilidadCalcular(
-                this,
-                ["0000"],
-                []
-            );
+                    const acumulado = [
+                        ...(this.getYaAprobado(nuevoIdIntermedio) ?? []),
+                        ...(this.getYaAprobado(idNodo) ?? []),
+                        materia as IDMateria
+                    ];
 
-            this.grafo[idIntermedio] = {};
-
-
-
-
-            for (const materia of combinacion) {
-                if (!this.grafo[materia]) this.grafo[materia] = {};
-                //this.grafo[idIntermedio][materia] = new ProbabilidadCalcular(
-                //    this,
-                //    [materia as IDMateria],
-                //    []
-                //);
-
-                // cargar todo lo del nodo actual a materia + materia
-                (this.yaAprobadasPorNodo[idIntermedio] ??= []).push(materia as IDMateria);
-
-                (this.yaAprobadasPorNodo[materia] ??= []).push(
-                    ...this.getYaAprobado(idIntermedio) as IDMateria[],
-                    materia as IDMateria // Agregamos también la nueva materia
-                );
-
-                // Eliminar duplicados, por si acaso
-                this.yaAprobadasPorNodo[materia] = Array.from(
-                    new Set(this.yaAprobadasPorNodo[materia])
-                );
-
-
-                // Obtener nuevas materias habilitadas desde el estado actual
-                const yaAprobadas = this.getYaAprobado(materia);
-                const nuevasHabilitadas = obtenerMateriasHabilitadas(plan, yaAprobadas);
-
-                // Evitar generar combinaciones vacías o ya aprobadas
-                const nuevasCombinaciones = obtenerCombinaciones(nuevasHabilitadas);
-
-                // Crear nuevos nodos intermedios desde el nodo actual
-                for (const nuevaCombinacion of nuevasCombinaciones) {
-                    const nuevoIdIntermedio = Math.floor(Math.random() * 3000).toString();
-
-                    // Guardar la representación
-                    intermedios[nuevoIdIntermedio] = nuevaCombinacion.join(',');
-
-                    // Conectar desde la materia actual al nuevo intermedio
-                    if (!this.grafo[idIntermedio]) this.grafo[idIntermedio] = {};
-                    this.grafo[idIntermedio][nuevoIdIntermedio] = new ProbabilidadCalcular(
-                        this,
-                        [materia as IDMateria],
-                        []
-                    );
-
-                    // Crear nodo intermedio
-                    if (!this.grafo[nuevoIdIntermedio]) this.grafo[nuevoIdIntermedio] = {};
-
-                    for (const nuevaMateria of nuevaCombinacion) {
-                        if (!this.grafo[nuevaMateria]) this.grafo[nuevaMateria] = {};
-
-                        this.grafo[nuevoIdIntermedio][nuevaMateria] = new ProbabilidadCalcular(
-                            this,
-                            [nuevaMateria as IDMateria],
-                            []
-                        );
-
-                        // Actualizar yaAprobadas para nueva materia
-                        const acumulado = [
-                            ...(this.getYaAprobado(nuevoIdIntermedio) ?? []),
-                            ...(this.getYaAprobado(materia) ?? []),
-                            nuevaMateria as IDMateria
-                        ];
-
-                        this.yaAprobadasPorNodo[nuevaMateria] = Array.from(new Set(acumulado));
-                    }
-
-                    // Guardar materias aprobadas en nodo intermedio también
-                    this.yaAprobadasPorNodo[nuevoIdIntermedio] = Array.from(new Set([
-                        ...this.getYaAprobado(materia),
-                        ...nuevaCombinacion as IDMateria[]
-                    ]));
+                    this.yaAprobadasPorNodo[materia] = Array.from(new Set(acumulado));
                 }
 
+                this.yaAprobadasPorNodo[nuevoIdIntermedio] = Array.from(new Set([
+                    ...materiasAprobadas,
+                    ...combinacion
+                ])) as IDMateria[];
 
-
+                procesarNodoRecursivo(nuevoIdIntermedio, this.yaAprobadasPorNodo[nuevoIdIntermedio]);
             }
+        };
 
-
-
-
-            // También agregar self-loop para consistencia
-            this.grafo[idIntermedio][idIntermedio] = new ProbabilidadCalcular(
-                this,
-                combinacion as IDMateria[],
-                []
-            );
+        // Inicializar el grafo con self-loops
+        for (const id in this.grafo) {
+            if (!this.grafo[id]) this.grafo[id] = {};
+            if (!this.grafo[id][id]) {
+                this.grafo[id][id] = new ProbabilidadCalcular(this, [id] as IDMateria[], []);
+            }
         }
 
-        console.log(intermedios);
-        for (const idInt of Object.keys(intermedios)) {
+        // Conectar el nodo inicial "0000" a todas las materias sin correlativas directas
+        for (const id in plan) {
+            if (plan[id].correlativasDirectas.length === 0 && id !== "0000") {
+                if (!this.grafo["0000"]) this.grafo["0000"] = {};
+                if (!this.grafo[id]) this.grafo[id] = {};
 
-            console.log(idInt)
-            console.log(this.getYaAprobado(idInt));
+                this.grafo["0000"][id] = new ProbabilidadCalcular(this, [<IDMateria>"0000"], []);
+            }
         }
 
+        // Procesar recursivamente desde el nodo inicial
+        procesarNodoRecursivo("0000", []);
     }
 }
