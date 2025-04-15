@@ -101,13 +101,41 @@ export class Grafo {
 
     }
 
+    /**
+     * Expande un nodo, para esto lo primero es generar las combinaciones de resultados de las cursadas actuales.
+     * Por ejemplo, si se esta cursando A y B, el resultado del cuatrimestre puede ser:
+     * A y B aprobadas, A aprobada, B aprobada, Ninguna aprobada
+     * 
+     * Nota: No se incluye loops por lo q en el ejemplo no iria "Ninguna aprobada"
+     */
     expandirNodo(idNodo: string) {
+
+        const cursadasActuales = extraerCombinacion(idNodo);
+
+        const combinacionesCursadasActuales: IDMateria[][] = [];
+
+        for (let k = 1; k <= cursadasActuales.length; k++) {
+            const combinacionesK = calcCombinaciones(cursadasActuales, k) as IDMateria[][];
+            combinacionesCursadasActuales.push(...combinacionesK);
+        }
+
+        for (const combinacionActuales of combinacionesCursadasActuales) {
+            this.expandirNodoAprobando(idNodo, combinacionActuales);
+        }
+
+    }
+
+    /**
+     * Construye los nodos adyacentes asumiendo que en el nodo actual se aprueban
+     * las materias de la lista.
+     */
+    expandirNodoAprobando(idNodo: string, aprobando: IDMateria[]) {
 
         const nodo = this.grafo[idNodo];
 
         // Calcular estados a los que se puede pasar desde el nodo actual
 
-        const cursables = this.getCursables([...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
+        const cursables = this.getCursables([...extraerAprobadas(idNodo), ...aprobando] as any);
 
         const combinaciones: IDMateria[][] = [];
 
@@ -120,7 +148,7 @@ export class Grafo {
 
         for (const combinacion of combinaciones) {
 
-            const idCombinacion = combinacionToID(combinacion, [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
+            const idCombinacion = combinacionToID(combinacion, [...extraerAprobadas(idNodo), ...aprobando] as any);
 
             const nombreNodo = combinacion.map(m => this.getNombre(m)).join(", ");
 
@@ -136,12 +164,12 @@ export class Grafo {
             }
         }
 
-        this.grafo[idNodo].salientes = combinaciones.map(
+        this.grafo[idNodo].salientes.push(...combinaciones.map(
             combinacion => combinacionToID(
                 combinacion,
-                [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any
+                [...extraerAprobadas(idNodo), ...aprobando] as any
             )
-        );
+        ));
 
         this.grafo[idNodo].expandido = true;
     }
