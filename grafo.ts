@@ -30,11 +30,6 @@ function calcCombinaciones<T>(arr: T[], k: number): T[][] {
     return result;
 }
 
-function esCombinacionDirecta(correlativas: IDMateria[], combinacion: IDMateria[]): boolean {
-    const correlativasSet = new Set(correlativas);
-    return combinacion.every(item => correlativasSet.has(item));
-}
-
 function combinacionToID(combinacion: IDMateria[], aprobadas: IDMateria[]): string {
 
     function ordenar(combinacion: IDMateria[]): IDMateria[] {
@@ -45,7 +40,6 @@ function combinacionToID(combinacion: IDMateria[], aprobadas: IDMateria[]): stri
 
     return ordenar(combinacion).filter(t => t).join(",") + "-" + ordenar(aprobadas).filter(t => t).join(",");
 }
-
 
 function extraerAprobadas(idNodo) {
     const partes = idNodo.split("-");
@@ -59,24 +53,42 @@ function extraerCombinacion(idNodo) {
     return combinacion;
 }
 
+function getColorParaIteracion(iteracion: number) {
+    switch (iteracion) {
+        case 1:
+            return "#fb8500";
+        case 2:
+            return "#023047";
+        case 3:
+            return "#ffb703";
+        case 4:
+            return "green";
+        default:
+            return "#8ecae6";
+    }
+}
 
 export class Grafo {
 
     grafo: GrafoInterno = {};
 
+    iteracion = 0;
+
     constructor(plan: Plan) {
 
         // Generar nodo inicial
 
-        this.grafo["0000-"] = new Nodo("0000-", "Inicio", "Inicio", false, [], "9cd141");
+        this.grafo["0000-"] = new Nodo("0000-", "Inicio", "Inicio", false, [], "#219ebc");
 
-        this.iteracion();
-        this.iteracion();
-        this.iteracion();
-        this.iteracion();
+        this.iterar();
+        this.iterar();
+        this.iterar();
+        this.iterar();
     }
 
-    iteracion() {
+    iterar() {
+
+        this.iteracion++;
 
         // Tomar todos los nodos no expandidos
 
@@ -90,14 +102,11 @@ export class Grafo {
 
     expandirNodo(idNodo: string) {
 
-        console.log("Expandiendo nodo", idNodo);
-
         const nodo = this.grafo[idNodo];
 
         // Calcular estados a los que se puede pasar desde el nodo actual
 
         const cursables = this.getCursables([...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
-        console.log(cursables)
 
         const combinaciones: IDMateria[][] = [];
 
@@ -110,11 +119,6 @@ export class Grafo {
 
         for (const combinacion of combinaciones) {
 
-            //console.log("idNodo:", idNodo);
-
-            //console.log("lleva aprobadas: ", extraerAprobadas(idNodo));
-
-
             const idCombinacion = combinacionToID(combinacion, [...extraerAprobadas(idNodo), ...extraerCombinacion(idNodo)] as any);
 
             const nombreNodo = combinacion.map(m => this.getNombre(m)).join(", ");
@@ -125,11 +129,11 @@ export class Grafo {
                     nombreNodo,
                     nombreNodo,
                     false,
-                    []
+                    [],
+                    getColorParaIteracion(this.iteracion)
                 );
             }
         }
-
 
         this.grafo[idNodo].salientes = combinaciones.map(
             combinacion => combinacionToID(
@@ -139,16 +143,12 @@ export class Grafo {
         );
 
         this.grafo[idNodo].expandido = true;
-
-
     }
 
     /**
      * Obtiene una lista de las asignaturas que se pueden cursar teniendo aprobadas las de la lista
      */
     getCursables(aprobadas: IDMateria[]): IDMateria[] {
-
-        console.log("aprobadas:", aprobadas);
 
         const cursables: IDMateria[] = [];
 
@@ -165,21 +165,16 @@ export class Grafo {
                 cursables.push(idMateria as IDMateria);
         }
 
-        console.log("cursables:", cursables);
-
         return cursables;
     }
 
     getNombre(id: string) {
         if (id === "0000") return "Inicio";
-        console.log("id al q se busca nombre ", id);
         return plan[id].nombre;
     }
 
     getNombreCorto(id: string) {
         if (id === "0000") return "Inicio";
-        console.log("id al q se busca nombre corto", id);
-
         return plan[id].nombreCorto;
     }
 
@@ -189,7 +184,11 @@ export class Grafo {
         const links: any[] = [];
 
         for (const source in this.grafo)
-            nodes.push({ id: source, text: extraerCombinacion(source).map(m => this.getNombreCorto(m)), esIntermedio: Number(source) < 3000 });
+            nodes.push({
+                id: source,
+                text: extraerCombinacion(source).map(m => this.getNombreCorto(m)),
+                color: this.grafo[source].color,
+            });
 
         for (const source in this.grafo) {
 

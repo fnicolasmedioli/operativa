@@ -7,9 +7,10 @@ export class Nodo {
     nombreCorto: string;
     salientes: string[];
     expandido: boolean = false;
-    color: string | undefined;
+    color?: string;
 
-    constructor(id: string, nombre: string, nombreCorto: string, expandido: boolean, salientes: string[] = [], color: string | undefined = undefined) {
+    constructor(id: string, nombre: string, nombreCorto: string, expandido: boolean, salientes: string[] = [], color?: string) {
+
         this.id = id;
         this.nombre = nombre;
         this.nombreCorto = nombreCorto;

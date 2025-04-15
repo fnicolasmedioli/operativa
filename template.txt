@@ -116,6 +116,7 @@ https://cdn.jsdelivr.net/npm/force-graph@1.49.1/src/force-graph.min.css
             })
             .nodeCanvasObjectMode(node => highlightNodes.has(node) ? 'before' : 'after')
             .nodeCanvasObject((node, ctx, globalScale) => {
+
                 if (highlightNodes.has(node)) {
                     // Dibujar anillo de hover antes del nodo
                     ctx.beginPath();
