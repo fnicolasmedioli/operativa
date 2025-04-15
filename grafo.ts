@@ -43,6 +43,7 @@ function combinacionToID(combinacion: IDMateria[], aprobadas: IDMateria[]): stri
 
 function extraerAprobadas(idNodo) {
     const partes = idNodo.split("-");
+    if (partes[1] === "") return [];
     const aprobadas = partes[1].split(",").map(m => m.trim());
     return aprobadas;
 }
@@ -183,12 +184,17 @@ export class Grafo {
         const nodes: any[] = [];
         const links: any[] = [];
 
-        for (const source in this.grafo)
+        for (const source in this.grafo) {
+
+            const aprobadas = extraerAprobadas(source).map(m => this.getNombreCorto(m)).filter(m => m != "Inicio");
+
             nodes.push({
                 id: source,
                 text: extraerCombinacion(source).map(m => this.getNombreCorto(m)),
                 color: this.grafo[source].color,
+                aprobadas: (aprobadas.length > 0) ? aprobadas : ["Ninguna"],
             });
+        }
 
         for (const source in this.grafo) {
 

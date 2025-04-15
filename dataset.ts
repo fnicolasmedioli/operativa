@@ -46,7 +46,21 @@ export const plan: Plan = {
         nombre: "Análisis y Diseño de Algoritmos I",
         nombreCorto: "ayda_1",
         esInicial: false
+    },
+    /*
+    "6211": {
+        correlativasDirectas: ["6121", "6122", "6125"],
+        nombre: "Ciencias de la Computación 2",
+        nombreCorto: "cs_compu_2",
+        esInicial: false
+    },
+    "6213": {
+        correlativasDirectas: ["6211", "6212"],
+        nombre: "Análisis y Diseño de Algoritmos II",
+        nombreCorto: "ayda_2",
+        esInicial: false
     }
+    */
 };
 
 const memo: { [codigo: string]: Set<string> } = {};
