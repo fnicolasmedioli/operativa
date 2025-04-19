@@ -1,6 +1,8 @@
 import { plan, IDMateria, Plan } from "./dataset";
+import { Link } from "./link";
 import { Nodo } from "./nodo";
 import { Probabilidad, ProbabilidadCalcular } from "./probabilidad";
+import { textoLinkAprobarMaterias } from "./util";
 
 
 type GrafoInterno = {
@@ -164,11 +166,44 @@ export class Grafo {
             }
         }
 
+        const cursandoActualemente = extraerCombinacion(idNodo);
+
         this.grafo[idNodo].salientes.push(...combinaciones.map(
-            combinacion => combinacionToID(
-                combinacion,
-                [...extraerAprobadas(idNodo), ...aprobando] as any
-            )
+
+            combinacion => {
+
+                const desaprobadas: IDMateria[] = [];
+
+                combinacion.map(asignatura => {
+                    if (cursandoActualemente.includes(asignatura)) {
+                        desaprobadas.push(asignatura);
+                        return null;
+                    }
+                });
+
+                return new Link(
+                    combinacionToID(
+                        combinacion,
+                        [...extraerAprobadas(idNodo), ...aprobando] as any
+                    ),
+                    textoLinkAprobarMaterias(
+                        aprobando.map(m => {
+                            return {
+                                nombreCortoMateria: this.getNombreCorto(m),
+                                prob: plan[m]?.probAprobar!
+                            };
+                        }),
+                        desaprobadas.map(m => {
+                            return {
+                                nombreCortoMateria: this.getNombreCorto(m),
+                                prob: plan[m]?.probDesaprobar!
+                            };
+                        })
+                    ),
+                    aprobando,
+                    desaprobadas
+                );
+            }
         ));
 
         this.grafo[idNodo].expandido = true;
@@ -228,16 +263,24 @@ export class Grafo {
 
             for (const target of this.grafo[source].salientes) {
 
-                if (!nodes.find(n => n.id === target))
+                if (!nodes.find(n => n.id === target.getTargetID()))
                     console.log('No se encontró', target);
 
                 if (!nodes.find(n => n.id === source))
                     console.log('No se encontró', source);
 
+                /*
                 if (source !== target)
                     links.push({ source, target, value: "" });
                 else
                     links.push({ source, target, curvature: 1 });
+                */
+
+                links.push({
+                    source,
+                    target: target.getTargetID(),
+                    value: target.getProbText(),
+                });
             }
         }
 

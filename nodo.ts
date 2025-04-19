@@ -1,15 +1,16 @@
 import { IDMateria } from "./dataset";
+import { Link } from "./link";
 
 export class Nodo {
 
     id: string;
     nombre: string;
     nombreCorto: string;
-    salientes: string[];
+    salientes: Link[];
     expandido: boolean = false;
     color?: string;
 
-    constructor(id: string, nombre: string, nombreCorto: string, expandido: boolean, salientes: string[] = [], color?: string) {
+    constructor(id: string, nombre: string, nombreCorto: string, expandido: boolean, salientes: Link[] = [], color?: string) {
 
         this.id = id;
         this.nombre = nombre;

@@ -7,6 +7,8 @@ export type Plan = {
         nombreCorto: string;
         correlativasTotales?: string[];
         esInicial: boolean;
+        probAprobar?: number;
+        probDesaprobar?: number;
     }
 };
 
@@ -15,37 +17,49 @@ export const plan: Plan = {
         correlativasDirectas: [],
         nombre: "Introducción a la Programación 1",
         nombreCorto: "prog_1",
-        esInicial: true
+        esInicial: true,
+        probAprobar: 0.3593185338151781,
+        probDesaprobar: 0.43133711925658236
     },
     "6113": {
         correlativasDirectas: [],
         nombre: "Álgebra 1",
         nombreCorto: "algebra_1",
-        esInicial: true
+        esInicial: true,
+        probAprobar: 0.490547263681592,
+        probDesaprobar: 0.26533996683250416
     },
     "6121": {
         correlativasDirectas: [],
         nombre: "Ciencias de la Computación 1",
         nombreCorto: "cs_compu_1",
-        esInicial: true
+        esInicial: true,
+        probAprobar: 0.4509283819628647,
+        probDesaprobar: 0.3209549071618037
     },
     "6122": {
         correlativasDirectas: ["6111"],
         nombre: "Introducción a la Programación 2",
         nombreCorto: "prog_2",
-        esInicial: false
+        esInicial: false,
+        probAprobar: 0.5452222789984671,
+        probDesaprobar: 0.21870209504343383
     },
     "6125": {
         correlativasDirectas: ["6113"],
         nombre: "Matemática Discreta",
         nombreCorto: "discreta",
-        esInicial: false
+        esInicial: false,
+        probAprobar: 0.595822454308094,
+        probDesaprobar: 0.1300261096605744
     },
     "6212": {
         correlativasDirectas: ["6121", "6122", "6125"],
         nombre: "Análisis y Diseño de Algoritmos I",
         nombreCorto: "ayda_1",
-        esInicial: false
+        esInicial: false,
+        probAprobar: 0.5836273817925194,
+        probDesaprobar: 0.29428369795342274
     },
     /*
     "6211": {
