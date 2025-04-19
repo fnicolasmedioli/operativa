@@ -87,6 +87,35 @@ export class Grafo {
         this.iterar();
         this.iterar();
         this.iterar();
+
+        this.calcularProbabilidades();
+
+
+    }
+
+    /**
+     * Calcula la multiplicacion de las probabilidades de cada enlace
+     */
+    calcularProbabilidades() {
+
+        for (const idNodo in this.grafo) {
+
+            const nodo = this.grafo[idNodo];
+
+            for (const link of nodo.salientes) {
+
+                const aprobar = link.aprobar.map(m => plan[m]?.probAprobar).filter(m => m);
+                const desaprobar = link.desaprobar.map(m => plan[m]?.probDesaprobar).filter(m => m);
+
+                const probAprobar = aprobar.reduce((a, b) => a! * b!, 1);
+                const probDesaprobar = desaprobar.reduce((a, b) => a! * b!, 1);
+
+                const probabilidad = probAprobar! * probDesaprobar!;
+
+                link.setProbabilidad(probabilidad);
+            }
+        }
+
     }
 
     iterar() {
@@ -279,7 +308,7 @@ export class Grafo {
                 links.push({
                     source,
                     target: target.getTargetID(),
-                    value: target.getProbText(),
+                    value: target.getProbText() + " " + target.getProbabilidad(),
                 });
             }
         }

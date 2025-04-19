@@ -9,6 +9,8 @@ export class Link {
     aprobar: IDMateria[] = [];
     desaprobar: IDMateria[] = [];
 
+    probabilidad?: number;
+
     constructor(targetID: string, probText: string | null = null, aprobar: IDMateria[] = [], desaprobar: IDMateria[] = []) {
         this.targetID = targetID;
         this.probText = probText;
@@ -22,5 +24,13 @@ export class Link {
 
     getTargetID(): string {
         return this.targetID;
+    }
+
+    setProbabilidad(probabilidad: number) {
+        this.probabilidad = probabilidad;
+    }
+
+    getProbabilidad(): number | null {
+        return this.probabilidad || null;
     }
 }
