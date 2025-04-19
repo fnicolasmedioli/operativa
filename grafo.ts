@@ -78,6 +78,8 @@ type CaminoConProbabilidad = {
     probabilidad: number;
 };
 
+const materiaFinal = "6212";
+
 export class Grafo {
 
     grafo: GrafoInterno = {};
@@ -102,7 +104,6 @@ export class Grafo {
         this.imprimirResultadosBacktracking();
 
         console.log(this.caminos6212.reduce((a, b) => a + b.probabilidad, 0));
-
     }
 
     caminos6212: CaminoConProbabilidad[] = [];
@@ -111,7 +112,7 @@ export class Grafo {
         const nodoActual = path[path.length - 1];
 
         // Si llegamos a 6212, guardamos el camino con su probabilidad
-        if (extraerCombinacion(nodoActual).includes("6113")) {
+        if (extraerCombinacion(nodoActual).includes(materiaFinal)) {
             this.caminos6212.push({
                 camino: [...path],
                 probabilidad: probAcumulada
@@ -138,7 +139,6 @@ export class Grafo {
     }
 
     imprimirResultadosBacktracking() {
-        console.log("Caminos hasta 6212 con probabilidades:");
         for (const { camino, probabilidad } of this.caminos6212) {
             const pathStr = camino
                 .map(id => {
@@ -147,14 +147,11 @@ export class Grafo {
                 })
                 .join(" -> ");
 
-            console.log(`${pathStr} | Probabilidad total: ${(probabilidad * 100).toFixed(2)}%`);
+            // console.log(`${pathStr} | Probabilidad total: ${(probabilidad * 100).toFixed(2)}%`);
         }
 
         const mejorCamino = this.caminos6212.reduce((max, actual) =>
             actual.probabilidad > max.probabilidad ? actual : max, this.caminos6212[0]);
-
-        console.log(`\nTotal de caminos: ${this.caminos6212.length}`);
-        console.log(`Mejor camino: ${(mejorCamino.probabilidad * 100).toFixed(2)}% de probabilidad`);
     }
 
 
