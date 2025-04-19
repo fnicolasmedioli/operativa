@@ -71,6 +71,13 @@ function getColorParaIteracion(iteracion: number) {
     }
 }
 
+type Camino = string[];
+
+type CaminoConProbabilidad = {
+    camino: Camino;
+    probabilidad: number;
+};
+
 export class Grafo {
 
     grafo: GrafoInterno = {};
@@ -90,20 +97,85 @@ export class Grafo {
 
         this.calcularProbabilidades();
 
+        this.backtracking(["0000-"]);
+
+        this.imprimirResultadosBacktracking();
+
+        console.log(this.caminos6212.reduce((a, b) => a + b.probabilidad, 0));
 
     }
+
+    caminos6212: CaminoConProbabilidad[] = [];
+
+    backtracking(path: string[], probAcumulada: number = 1) {
+        const nodoActual = path[path.length - 1];
+
+        // Si llegamos a 6212, guardamos el camino con su probabilidad
+        if (extraerCombinacion(nodoActual).includes("6113")) {
+            this.caminos6212.push({
+                camino: [...path],
+                probabilidad: probAcumulada
+            });
+            return;
+        }
+
+        const nodo = this.grafo[nodoActual];
+
+        for (const link of nodo.salientes) {
+            const siguienteID = link.getTargetID();
+            const prob = link.getProbabilidad();
+
+            // Evitar caminos con probabilidad indefinida
+            if (prob == null) continue;
+
+            // Evitamos ciclos por seguridad
+            if (path.includes(siguienteID)) continue;
+
+            path.push(siguienteID);
+            this.backtracking(path, probAcumulada * prob);
+            path.pop(); // backtrack
+        }
+    }
+
+    imprimirResultadosBacktracking() {
+        console.log("Caminos hasta 6212 con probabilidades:");
+        for (const { camino, probabilidad } of this.caminos6212) {
+            const pathStr = camino
+                .map(id => {
+                    const aprobadas = extraerAprobadas(id).join(",");
+                    return `[${id}] (${aprobadas})`;
+                })
+                .join(" -> ");
+
+            console.log(`${pathStr} | Probabilidad total: ${(probabilidad * 100).toFixed(2)}%`);
+        }
+
+        const mejorCamino = this.caminos6212.reduce((max, actual) =>
+            actual.probabilidad > max.probabilidad ? actual : max, this.caminos6212[0]);
+
+        console.log(`\nTotal de caminos: ${this.caminos6212.length}`);
+        console.log(`Mejor camino: ${(mejorCamino.probabilidad * 100).toFixed(2)}% de probabilidad`);
+    }
+
+
 
     /**
      * Calcula la multiplicacion de las probabilidades de cada enlace
      */
     calcularProbabilidades() {
-
         for (const idNodo in this.grafo) {
-
             const nodo = this.grafo[idNodo];
 
-            for (const link of nodo.salientes) {
+            if (nodo.id === "0000-") {
+                for (const link of nodo.salientes) {
+                    link.setProbabilidad(1 / 7);
+                }
+                continue;
+            }
 
+            let sumatoriaLinks = 0;
+
+            for (const link of nodo.salientes) {
                 const aprobar = link.aprobar.map(m => plan[m]?.probAprobar).filter(m => m);
                 const desaprobar = link.desaprobar.map(m => plan[m]?.probDesaprobar).filter(m => m);
 
@@ -112,11 +184,32 @@ export class Grafo {
 
                 const probabilidad = probAprobar! * probDesaprobar!;
 
+                sumatoriaLinks += probabilidad;
+
                 link.setProbabilidad(probabilidad);
             }
-        }
 
+            // Agrupamos por probabilidad
+            const grupos: Record<string, Link[]> = {};
+            for (const link of nodo.salientes) {
+                const key = link.getProbabilidad()?.toFixed(10); // Redondeo para evitar errores por punto flotante
+                if (!grupos[key!]) grupos[key!] = [];
+                grupos[key!].push(link);
+            }
+
+            // Ajustamos probabilidades dividiendo por el tamaño del grupo
+            for (const key in grupos) {
+                const grupo = grupos[key];
+                if (grupo.length > 1) {
+                    for (const link of grupo) {
+                        const original = link.getProbabilidad();
+                        link.setProbabilidad(original! / grupo.length);
+                    }
+                }
+            }
+        }
     }
+
 
     iterar() {
 
