@@ -6,5 +6,12 @@ type DataLink = {
 }
 
 export function textoLinkAprobarMaterias(aprobadas: DataLink[], desaprobadas: DataLink[]): string {
-    return `Pa(${aprobadas.map(d => d.nombreCortoMateria + ` [${d.prob?.toFixed(2)}]`).join(", ")}) | Pd(${desaprobadas.map(d => d.nombreCortoMateria + ` [${d.prob?.toFixed(2)}]`).join(", ")})` || "?";
+    const aprobadasText = aprobadas.length
+        ? `Pa(${aprobadas.map(d => d.nombreCortoMateria + ` [${d.prob?.toFixed(2) || "?"}]`).join(", ")})`
+        : "";
+    const desaprobadasText = desaprobadas.length
+        ? `Pd(${desaprobadas.map(d => d.nombreCortoMateria + ` [${d.prob?.toFixed(2) || "?"}]`).join(", ")})`
+        : "";
+
+    return [aprobadasText, desaprobadasText].filter(Boolean).join(" & ") || "?";
 }

@@ -137,21 +137,18 @@ export class Grafo {
             path.pop(); // backtrack
         }
     }
-
     imprimirResultadosBacktracking() {
-        for (const { camino, probabilidad } of this.caminos6212) {
+        for (const { camino, probabilidad } of this.caminos6212.slice(-5)) {
             const pathStr = camino
-                .map(id => {
+                .map((id, index) => {
                     const aprobadas = extraerAprobadas(id).join(",");
-                    return `[${id}] (${aprobadas})`;
+                    const indent = "  ".repeat(index); // Incremental indentation
+                    return `${indent}[${id}] (${aprobadas})`;
                 })
-                .join(" -> ");
+                .join("\n"); // New line for each state
 
-            // console.log(`${pathStr} | Probabilidad total: ${(probabilidad * 100).toFixed(2)}%`);
+            console.log(`${pathStr}\nProbabilidad total: ${(probabilidad * 100).toFixed(5)}%\n\n`);
         }
-
-        const mejorCamino = this.caminos6212.reduce((max, actual) =>
-            actual.probabilidad > max.probabilidad ? actual : max, this.caminos6212[0]);
     }
 
 
@@ -398,7 +395,7 @@ export class Grafo {
                 links.push({
                     source,
                     target: target.getTargetID(),
-                    value: target.getProbText() + " " + target.getProbabilidad(),
+                    value: target.getProbText() + " -> " + (target.getProbabilidad()?.toFixed(2) ?? ""),
                 });
             }
         }
